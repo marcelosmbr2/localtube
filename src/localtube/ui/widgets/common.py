@@ -187,6 +187,17 @@ def page_header(title: str, subtitle: str, margins=(24, 20, 24, 18)) -> tuple[QF
     return frame(outer, "PageHeader"), sub, outer
 
 
+def page_header_row(title: str, subtitle: str, *controls: QWidget) -> tuple[QFrame, QLabel]:
+    """Cabeçalho com título à esquerda e controles alinhados à direita, na base."""
+    title_lbl = QLabel(title)
+    title_lbl.setObjectName("PageTitle")
+    sub = QLabel(subtitle)
+    sub.setObjectName("PageSubtitle")
+    layout = hbox(vbox(title_lbl, sub, spacing=3), None, *controls, spacing=8, margins=(24, 20, 24, 16))
+    layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
+    return frame(layout, "PageHeader"), sub
+
+
 class ClickableFrame(QFrame):
     clicked = Signal()
 
@@ -334,8 +345,11 @@ class SegButton(QPushButton):
         self._sync()
 
     def set_count(self, count: str) -> None:
-        self._count.setText(count)
-        self._count.setVisible(True)
+        if self._count.text() != count:
+            self._count.setText(count)
+            self._count.setVisible(True)
+            self.layout().invalidate()
+            self.updateGeometry()
 
     def sizeHint(self) -> QSize:
         return QSize(self.layout().sizeHint().width(), 24)

@@ -4,12 +4,22 @@ from collections.abc import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QFrame, QMainWindow, QPushButton, QStackedWidget, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QFrame,
+    QMainWindow,
+    QPushButton,
+    QStackedWidget,
+    QSystemTrayIcon,
+    QWidget,
+)
 
 from localtube import icons, theme
+from localtube.core.ytdlp import domain
 from localtube.services import Services
+from localtube.ui import desktop
 from localtube.ui.widgets.common import hbox, icon_label, kbd, label, vbox
-from localtube.ui.widgets.overlays import Command, CommandPalette, Toast
+from localtube.ui.widgets.overlays import URL_RE, Command, CommandPalette, Toast
 from localtube.ui.widgets.sidebar import Sidebar
 
 
@@ -42,6 +52,16 @@ class MainWindow(QMainWindow):
         self._shortcuts()
         services.tools_changed.connect(self._sync_tools)
         self._sync_tools()
+
+        self._own_clipboard = ""
+        QApplication.clipboard().dataChanged.connect(self._on_clipboard)
+        self.tray = QSystemTrayIcon(icons.app_icon(), self)
+        self.tray.setToolTip("LocalTube")
+        downloads = services.downloads
+        for signal in (downloads.job_added, downloads.job_changed, downloads.job_removed):
+            signal.connect(self._sync_queue_count)
+        downloads.job_finished.connect(
+            lambda job: self.notify("Download concluído", job.request.title))
         self.go("download")
 
     # Construção ------------------------------------------------------------
@@ -83,7 +103,7 @@ class MainWindow(QMainWindow):
         add("Ctrl+Enter", self._primary_action)
 
     def _commands(self) -> list[Command]:
-        active = self.pages["queue"].active_count() if hasattr(self.pages["queue"], "active_count") else 0
+        active = self.services.downloads.active_count()
         return [
             Command("Inspecionar link da área de transferência", "link", self.inspect_clipboard, "Ctrl+V"),
             Command("Converter arquivos…", "convert", lambda: self.go("convert"), "Ctrl+2"),
@@ -111,19 +131,36 @@ class MainWindow(QMainWindow):
         self.pages["download"].inspect(url)
 
     def inspect_clipboard(self) -> None:
-        from PySide6.QtWidgets import QApplication
-
         text = QApplication.clipboard().text().strip()
-        if text.lower().startswith(("http://", "https://")):
+        if URL_RE.match(text):
             self.inspect(text)
         else:
             self.toast("A área de transferência não tem um link", error=True)
 
-    def open_download_dir(self) -> None:
-        from localtube.ui import desktop
+    def copy_text(self, text: str) -> None:
+        self._own_clipboard = text
+        QApplication.clipboard().setText(text)
 
+    def notify(self, title: str, message: str) -> None:
+        if not self.services.settings.get("notifications") or not QSystemTrayIcon.isSystemTrayAvailable():
+            return
+        self.tray.show()
+        self.tray.showMessage(title, message, icons.app_icon(), 5000)
+
+    def open_download_dir(self) -> None:
         desktop.open_folder(self.services.settings.get("download_dir"))
         self.toast("Pasta de downloads aberta")
+
+    def _on_clipboard(self) -> None:
+        text = QApplication.clipboard().text().strip()
+        if (not self.services.settings.get("clipboard_monitor") or not URL_RE.match(text)
+                or text == self._own_clipboard):
+            return
+        self._own_clipboard = text
+        self.toast(f"Link copiado · {domain(text)}", "Inspecionar", lambda: self.inspect(text))
+
+    def _sync_queue_count(self, *_args) -> None:
+        self.sidebar.set_queue_count(self.services.downloads.active_count())
 
     def check_updates(self) -> None:
         self.go("settings")
@@ -153,4 +190,6 @@ class MainWindow(QMainWindow):
         for page in self.pages.values():
             if hasattr(page, "shutdown"):
                 page.shutdown()
+        self.services.shutdown()
+        self.tray.hide()
         super().closeEvent(event)

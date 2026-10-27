@@ -3,6 +3,7 @@
 from PySide6.QtCore import QObject, Signal
 
 from localtube.core import tools
+from localtube.core.downloads import DownloadQueue
 from localtube.settings import AppSettings
 
 
@@ -16,6 +17,10 @@ class Services(QObject):
         self.ytdlp_version = tools.ytdlp_version()
         self.refresh_tools()
         settings.changed.connect(self._on_setting)
+        self.downloads = DownloadQueue(settings, lambda: self.ffmpeg.path, parent=self)
+
+    def shutdown(self) -> None:
+        self.downloads.shutdown()
 
     def refresh_tools(self) -> None:
         self.ffmpeg = tools.ffmpeg_info(self.settings.get("ffmpeg_path"))
