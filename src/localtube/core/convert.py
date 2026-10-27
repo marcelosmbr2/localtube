@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal
 
-from localtube.core.media import MEDIA_EXTS, ProbeService, describe, kind_from_ext
+from localtube.core.media import MEDIA_EXTS, ProbeService, describe, file_stat, kind_from_ext
 from localtube.core.process import ProcessRunner
 
 VIDEO_TARGETS = ["mp4", "mkv", "webm", "mov", "gif"]
@@ -208,9 +208,10 @@ class ConvertQueue(QObject):
         added = 0
         for path in paths:
             p = Path(path)
-            if path in known or not p.is_file() or p.suffix.lower().lstrip(".") not in MEDIA_EXTS:
+            st = file_stat(p)
+            if path in known or not st or p.suffix.lower().lstrip(".") not in MEDIA_EXTS:
                 continue
-            item = ConvertItem(next(self._ids), str(p), kind_from_ext(path), describe(path, None, p.stat().st_size))
+            item = ConvertItem(next(self._ids), str(p), kind_from_ext(path), describe(path, None, st.st_size))
             self.items.append(item)
             self.item_added.emit(item)
             self._probes.request(item.path)
@@ -322,7 +323,8 @@ class ConvertQueue(QObject):
         info = self._probes.get(item.path)
         if info:
             item.kind, item.duration = info.kind, info.duration
-            item.meta = describe(item.path, info, Path(item.path).stat().st_size)
+            st = file_stat(Path(item.path))
+            item.meta = describe(item.path, info, st.st_size if st else None)
             self.item_changed.emit(item)
 
     def _on_probed(self, path: str, _info) -> None:

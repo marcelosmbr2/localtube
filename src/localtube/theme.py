@@ -245,6 +245,7 @@ QTableView {{ background: transparent; border: 0; gridline-color: transparent; s
 QHeaderView {{ background: {BG_WINDOW}; border: 0; }}
 QHeaderView::section {{
     background: {BG_WINDOW}; border: 0; border-bottom: 1px solid {BORDER_ROW}; color: {TEXT_7};
-    font-size: 11px; font-weight: 600; padding: 0 8px; height: 34px;
+    font-size: 11px; font-weight: 600; padding: 0 0 0 16px; height: 34px;
 }}
+QHeaderView::section:first {{ padding-left: 24px; }}
 """

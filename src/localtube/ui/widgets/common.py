@@ -2,14 +2,15 @@
 
 from collections.abc import Callable, Sequence
 
-from PySide6.QtCore import QPoint, QRect, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
+from PySide6.QtCore import QEvent, QObject, QPoint, QPointF, QRect, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import (
     QAbstractButton,
     QButtonGroup,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QLayout,
     QLayoutItem,
     QPushButton,
@@ -201,13 +202,13 @@ def page_header(title: str, subtitle: str, margins=(24, 20, 24, 18)) -> tuple[QF
     return frame(outer, "PageHeader"), sub, outer
 
 
-def page_header_row(title: str, subtitle: str, *controls: QWidget) -> tuple[QFrame, QLabel]:
+def page_header_row(title: str, subtitle: str, *controls: QWidget) -> tuple[QFrame, "ElidedLabel"]:
     """Cabeçalho com título à esquerda e controles alinhados à direita, na base."""
     title_lbl = QLabel(title)
     title_lbl.setObjectName("PageTitle")
-    sub = QLabel(subtitle)
-    sub.setObjectName("PageSubtitle")
-    layout = hbox(vbox(title_lbl, sub, spacing=3), None, *controls, spacing=8, margins=(24, 20, 24, 16))
+    sub = ElidedLabel(subtitle, 12, theme.TEXT_6)
+    layout = hbox(vbox(title_lbl, sub, spacing=3), 16, *controls, spacing=8, margins=(24, 20, 24, 16))
+    layout.setStretch(0, 1)
     layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
     return frame(layout, "PageHeader"), sub
 
@@ -640,3 +641,27 @@ class FlowLayout(QLayout):
             x += hint.width() + self._spacing
             line_height = max(line_height, hint.height())
         return y + line_height - rect.y()
+
+
+def paint_stripes(p: QPainter, rect: QRectF, step: float = 8) -> None:
+    """Listras diagonais do placeholder de miniatura (faixas de `step` px)."""
+    p.fillRect(rect, QColor("#151518"))
+    p.setPen(QPen(QColor("#19191d"), step))
+    x = -rect.height()
+    while x < rect.width():
+        p.drawLine(QPointF(rect.left() + x, rect.bottom()), QPointF(rect.left() + x + rect.height(), rect.top()))
+        x += step * 2 * 1.414
+
+
+class FocusHighlighter(QObject):
+    """Acende a borda do contêiner quando o QLineEdit interno ganha foco."""
+
+    def __init__(self, edit: QLineEdit, container: QFrame) -> None:
+        super().__init__(edit)
+        self._container = container
+        edit.installEventFilter(self)
+
+    def eventFilter(self, obj, event) -> bool:  # noqa: N802
+        if event.type() in (QEvent.Type.FocusIn, QEvent.Type.FocusOut):
+            set_prop(self._container, "focused", event.type() == QEvent.Type.FocusIn)
+        return False

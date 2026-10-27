@@ -2,19 +2,11 @@
 
 from PySide6.QtWidgets import QWidget
 
-from localtube.ui.widgets.common import label, page_header, vbox
-
-
-def _placeholder(title: str) -> QWidget:
-    page = QWidget()
-    header, _, _ = page_header(title, "Em construção.")
-    page.setLayout(vbox(header, label(""), None, spacing=0))
-    return page
-
 
 def build_pages(services, host) -> dict[str, QWidget]:
     from localtube.ui.pages.convert import ConvertPage
     from localtube.ui.pages.download import DownloadPage
+    from localtube.ui.pages.library import LibraryPage
     from localtube.ui.pages.queue import QueuePage
     from localtube.ui.pages.settings import SettingsPage
 
@@ -22,6 +14,6 @@ def build_pages(services, host) -> dict[str, QWidget]:
         "download": DownloadPage(services, host),
         "convert": ConvertPage(services, host),
         "queue": QueuePage(services, host),
-        "library": _placeholder("Biblioteca"),
+        "library": LibraryPage(services, host),
         "settings": SettingsPage(services, host),
     }

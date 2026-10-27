@@ -1,6 +1,7 @@
 """Metadados de arquivos de mídia via ffprobe, com cache e execução em segundo plano."""
 
 import json
+import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -24,6 +25,20 @@ class MediaInfo:
     height: int | None = None
     sample_rate: int | None = None
     bit_rate: int | None = None
+
+
+def file_stat(path: Path) -> os.stat_result | None:
+    try:
+        return path.stat()
+    except OSError:
+        pass
+    if os.name == "nt" and not str(path).startswith("\\\\?\\"):
+        # Caminhos com mais de 260 caracteres só abrem com o prefixo de caminho estendido.
+        try:
+            return Path("\\\\?\\" + str(path.absolute())).stat()
+        except OSError:
+            pass
+    return None
 
 
 def kind_from_ext(path: str) -> str:
@@ -123,11 +138,8 @@ class ProbeService(QObject):
 
     @staticmethod
     def _key(path: str):
-        try:
-            st = Path(path).stat()
-        except OSError:
-            return None
-        return (path, st.st_mtime, st.st_size)
+        st = file_stat(Path(path))
+        return (path, st.st_mtime, st.st_size) if st else None
 
     def shutdown(self) -> None:
         self._pool.shutdown(wait=False, cancel_futures=True)

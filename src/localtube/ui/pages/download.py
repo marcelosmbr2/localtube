@@ -1,6 +1,6 @@
 """Tela Baixar: inspeciona um link com o yt-dlp e monta o pedido de download."""
 
-from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, Qt, QUrl
+from PySide6.QtCore import QPointF, QRectF, Qt, QUrl
 from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
@@ -26,6 +26,7 @@ from localtube.ui.widgets.common import (
     ClickableFrame,
     ElidedLabel,
     FlowLayout,
+    FocusHighlighter,
     SegmentedControl,
     ToggleRow,
     badge,
@@ -39,6 +40,7 @@ from localtube.ui.widgets.common import (
     icon_label,
     label,
     page_header,
+    paint_stripes,
     scroll_area,
     section_label,
     set_prop,
@@ -48,16 +50,6 @@ from localtube.ui.widgets.common import (
 
 SUB_LANG_PREFERENCE = ["pt-BR", "pt", "en"]
 COLUMNS = [13, 12, 7, 7, 8]  # proporções das colunas da tabela de formatos (como no mockup)
-
-
-def paint_stripes(p: QPainter, rect: QRectF, step: float = 8) -> None:
-    """Listras diagonais do placeholder de miniatura (faixas de `step` px)."""
-    p.fillRect(rect, QColor("#151518"))
-    p.setPen(QPen(QColor("#19191d"), step))
-    x = -rect.height()
-    while x < rect.width():
-        p.drawLine(QPointF(rect.left() + x, rect.bottom()), QPointF(rect.left() + x + rect.height(), rect.top()))
-        x += step * 2 * 1.414
 
 
 class Thumbnail(QWidget):
@@ -168,20 +160,6 @@ class FormatRow(ClickableFrame):
         self.radio.checked = selected
         self.radio.update()
         set_prop(self, "selected", selected)
-
-
-class FocusHighlighter(QObject):
-    """Acende a borda do contêiner quando o QLineEdit interno ganha foco."""
-
-    def __init__(self, edit: QLineEdit, container: QFrame) -> None:
-        super().__init__(edit)
-        self._container = container
-        edit.installEventFilter(self)
-
-    def eventFilter(self, obj, event) -> bool:  # noqa: N802
-        if event.type() in (QEvent.Type.FocusIn, QEvent.Type.FocusOut):
-            set_prop(self._container, "focused", event.type() == QEvent.Type.FocusIn)
-        return False
 
 
 class DownloadPage(QWidget):

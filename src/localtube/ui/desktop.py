@@ -23,5 +23,9 @@ def reveal(path: str) -> None:
         open_folder(str(target.parent if target.suffix else target))
 
 
+def open_file(path: str) -> None:
+    QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+
+
 def open_url(url: str) -> None:
     QDesktopServices.openUrl(QUrl(url))

@@ -195,7 +195,7 @@ class QueuePage(QWidget):
         counts = self.queue.counts()
         for key in FILTERS:
             self.filters.set_count(key, counts[key])
-        self.subtitle.setText(f"{counts['active']} ativos · {counts['done']} concluídos")
+        self.subtitle.set_full_text(f"{counts['active']} ativos · {counts['done']} concluídos")
         visible = 0
         for row in self.rows.values():
             show = FILTERS[self.filter](row.job)
