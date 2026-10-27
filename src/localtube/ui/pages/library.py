@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLineEdit,
     QStackedWidget,
-    QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QTableView,

@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from localtube import icons, theme
+from localtube import theme
 from localtube.core import formats, ytdlp
 from localtube.core.formats import FormatOption
 from localtube.core.formatting import fmt_clock, fmt_duration, fmt_relative, fmt_size, fmt_upload_date, parse_clock
