@@ -95,7 +95,7 @@ def section_font() -> QFont:
 def build_stylesheet() -> str:
     return f"""
 * {{ outline: none; }}
-QWidget {{ color: {TEXT}; font-family: "{UI_FONT}"; font-size: 13px; }}
+QWidget {{ color: {TEXT}; }}
 QMainWindow, #Central {{ background: {BG_WINDOW}; }}
 QToolTip {{ background: {BG_TOAST}; color: {TEXT_2}; border: 1px solid #2c2c33; padding: 4px 6px; }}
 

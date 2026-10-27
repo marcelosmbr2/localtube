@@ -13,10 +13,12 @@ def _placeholder(title: str) -> QWidget:
 
 
 def build_pages(services, host) -> dict[str, QWidget]:
+    from localtube.ui.pages.settings import SettingsPage
+
     return {
         "download": _placeholder("Baixar"),
         "convert": _placeholder("Converter"),
         "queue": _placeholder("Fila"),
         "library": _placeholder("Biblioteca"),
-        "settings": _placeholder("Configurações"),
+        "settings": SettingsPage(services, host),
     }
