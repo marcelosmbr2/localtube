@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 LocalTube: a Python desktop app built with PySide6 (Qt Widgets). Packaged with `pyproject.toml` (setuptools, `src/` layout); requires Python >=3.11, and the local `.venv` uses Python 3.14 with PySide6 6.12. UI text is in Portuguese (pt-BR).
 
-The visual reference for the UI lives outside this folder, in `../mockup/LocalTube.dc.html` (HTML mockup + `support.js`). Consult it when building screens.
+The visual reference for the UI is `mockup/LocalTube.dc.html` (HTML mockup + `support.js`): its markup holds the exact colors/sizes and its `<script>` block holds the screen behavior. Consult it when building screens.
 
 ## Commands (Windows / PowerShell)
 

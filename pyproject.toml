@@ -10,6 +10,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "PySide6>=6.10",
+    "yt-dlp>=2026.10.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-qt>=4.4",
 ]
 
 [project.scripts]
@@ -17,3 +24,10 @@ localtube = "localtube.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+localtube = ["resources/*.svg", "resources/fonts/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
