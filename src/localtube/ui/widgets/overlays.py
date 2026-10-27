@@ -12,6 +12,7 @@ from localtube import icons, theme
 from localtube.ui.widgets.common import (
     ClickableFrame,
     button,
+    discard,
     hbox,
     icon_label,
     kbd,
@@ -188,7 +189,7 @@ class CommandPalette(QWidget):
             group = "Sugestões"
         self.group.setText(group)
         for item in self._items:
-            item.deleteLater()
+            discard(item)
         self._items = []
         for command in commands:
             item = PaletteItem(command)

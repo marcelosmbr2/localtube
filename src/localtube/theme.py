@@ -141,6 +141,13 @@ QPushButton[variant="accentLink"]:hover {{ color: {ACCENT_TEXT}; }}
 QPushButton[size="lg"] {{ height: 36px; border-radius: 8px; font-size: 13px; padding: 0 14px; }}
 QPushButton[size="sm"] {{ height: 28px; border-radius: 6px; font-size: 12px; padding: 0 10px; }}
 
+QPushButton[variant="target"] {{
+    height: 30px; padding: 0; border-radius: 6px; font-size: 12px; font-weight: 500;
+    border: 1px solid {BORDER_INPUT}; background: {BG_SEGMENT}; color: {TEXT_3};
+}}
+QPushButton[variant="target"]:hover {{ border-color: {BORDER_HOVER}; }}
+QPushButton[variant="target"]:checked {{ border-color: rgba(240,113,82,.45); background: rgba(240,113,82,.1); color: {ACCENT_TEXT}; }}
+
 QToolButton[variant="icon"] {{ background: transparent; border: 1px solid transparent; border-radius: 6px; }}
 QToolButton[variant="icon"]:hover {{ background: #1e1e23; }}
 QToolButton[variant="iconOutline"] {{ background: transparent; border: 1px solid transparent; border-radius: 6px; }}

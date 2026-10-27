@@ -23,6 +23,20 @@ from PySide6.QtWidgets import (
 from localtube import icons, theme
 
 
+def discard(widget: QWidget) -> None:
+    """Tira o widget da tela já; deleteLater sozinho o deixaria visível até o laço de eventos voltar."""
+    widget.hide()
+    widget.setParent(None)
+    widget.deleteLater()
+
+
+def clear_layout(layout: QLayout) -> None:
+    while layout.count():
+        item = layout.takeAt(0)
+        if item.widget():
+            discard(item.widget())
+
+
 def repolish(widget: QWidget) -> None:
     widget.style().unpolish(widget)
     widget.style().polish(widget)
@@ -402,7 +416,7 @@ class SegmentedControl(QFrame):
     def set_options(self, options: Sequence[tuple[str, str]], value: str | None = None) -> None:
         for btn in self._buttons.values():
             self._group.removeButton(btn)
-            btn.deleteLater()
+            discard(btn)
         self._buttons.clear()
         layout = self.layout()
         for key, text in options:
@@ -465,7 +479,7 @@ class Card(QFrame):
         if row in self._rows:
             self._rows.remove(row)
             self._layout.removeWidget(row)
-            row.deleteLater()
+            discard(row)
             self._refresh_dividers()
 
     def clear_rows(self) -> None:
@@ -611,7 +625,7 @@ class FlowLayout(QLayout):
         while self._items:
             item = self._items.pop()
             if item.widget():
-                item.widget().deleteLater()
+                discard(item.widget())
 
     def _do_layout(self, rect: QRect, test: bool) -> int:
         x, y, line_height = rect.x(), rect.y(), 0
