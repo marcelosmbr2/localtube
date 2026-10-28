@@ -34,6 +34,13 @@ To check the UI without showing a window, use `QT_QPA_PLATFORM=offscreen`, creat
   - `media.ProbeService` runs ffprobe in a thread pool with a cache keyed by path/mtime/size and emits `probed` back on the UI thread; the library model and the convert queue listen to it.
 - `ui/pages/*` are the five screens; `ui/widgets/common.py` holds the building blocks (segmented control, toggle, card with divider rows, elided label, flow layout); `ui/widgets/overlays.py` has the toast and the command palette (Ctrl+K). Pages talk back to the window through `host.go()`, `host.toast()`, `host.copy_text()`, `host.notify()`.
 
+## Packaging (`packaging/`)
+
+`packaging\build.ps1` installs the `build` extra (PyInstaller), renders `build\localtube.ico` from `icons.app_icon()` (`make_icon.py`), runs `localtube.spec`, copies ffmpeg/ffprobe + license into `dist\LocalTube\ffmpeg\`, then compiles `installer.iss` with Inno Setup into `dist\LocalTube-<version>-Setup.exe` (per-user install, no admin).
+
+- The spec builds two executables over one `_internal`: `LocalTube.exe` (windowed) and `localtube-ytdlp.exe` (console; `ytdlp_entry.py`). There is no `python -m` once frozen, and a windowed PyInstaller exe runs with `sys.stdout`/`sys.stderr` set to `None`, so every yt-dlp launch must go through `tools.ytdlp_command()`, never `sys.executable`.
+- `tools.FROZEN` switches behavior: ffmpeg is looked up in `<app>\ffmpeg\` before PATH, and "Atualizar" downloads the yt-dlp wheel from PyPI (sha256-checked) into `tools.ytdlp_updates_dir()` instead of running pip; the helper puts the newest wheel first on `sys.path`. `bundled_ytdlp_version()` reads package metadata (`copy_metadata("yt-dlp")` in the spec) so it does not import `yt_dlp`.
+
 ## Qt gotchas found here
 
 - Colors/sizes come from `theme.py` tokens. Do not put `font-family`/`font-size` on the global `QWidget` QSS rule: it overrides `setFont()` (that broke the monospace labels). Fonts are set per widget via `theme.ui_font`/`theme.mono_font`.

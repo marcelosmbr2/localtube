@@ -2,12 +2,12 @@
 
 import json
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
 from PySide6.QtCore import QObject, Signal
 
+from localtube.core import tools
 from localtube.core.process import ProcessRunner
 
 PROGRESS_PREFIX = "LTPROG "
@@ -150,11 +150,12 @@ class Inspector(QObject):
         runner.line.connect(self._out.append)
         runner.error_line.connect(self._on_error_line)
         runner.finished.connect(lambda code, r=runner: self._on_finished(r, code))
-        args = ["-m", "yt_dlp", "-J", "--no-playlist", "--no-warnings"]
+        program, *args = tools.ytdlp_command()
+        args += ["-J", "--no-playlist", "--no-warnings"]
         if proxy:
             args += ["--proxy", proxy]
         self._runner = runner
-        runner.start(sys.executable, args + ["--", url])
+        runner.start(program, args + ["--", url])
 
     def cancel(self) -> None:
         if self._runner:

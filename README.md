@@ -38,4 +38,20 @@ localtube
 python -m pytest
 ```
 
+## Instalador para Windows
+
+Para entregar o app a quem não tem Python, gere o instalador:
+
+```powershell
+winget install --id Gyan.FFmpeg -e            # ffmpeg que vai junto no instalador
+winget install --id JRSoftware.InnoSetup -e   # compilador do instalador
+.\packaging\build.ps1
+```
+
+O resultado é `dist\LocalTube-<versão>-Setup.exe`, um arquivo só. Quem recebe dá dois cliques e segue o assistente. O LocalTube é instalado só para aquele usuário, sem pedir senha de administrador, e ganha um atalho no Menu Iniciar. O instalador já inclui Python, Qt, yt-dlp e ffmpeg. `dist\LocalTube\` é a mesma versão em pasta, sem instalação (`-SkipInstaller` gera só ela; `-FFmpegDir` usa outro ffmpeg).
+
+Na versão instalada, Configurações › Motor › Atualizar baixa o yt-dlp novo do PyPI para `%LOCALAPPDATA%\LocalTube\yt-dlp`, sem precisar de um instalador novo.
+
+O executável não tem assinatura digital, então o Windows SmartScreen pode avisar "O Windows protegeu o computador" na primeira execução: clique em **Mais informações › Executar assim mesmo**. As licenças dos componentes incluídos estão em `THIRD-PARTY-NOTICES.txt`; o ffmpeg incluído é GPL, então distribua junto o link para o código-fonte dele (já está no arquivo).
+
 As fontes Inter e JetBrains Mono são distribuídas sob a SIL Open Font License (veja `src/localtube/resources/fonts`).

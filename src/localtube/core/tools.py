@@ -6,9 +6,16 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
+from importlib import metadata
 from pathlib import Path
 
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+# Empacotado pelo PyInstaller (packaging/): o yt-dlp roda pelo executável auxiliar e o
+# ffmpeg vem na pasta ffmpeg/ ao lado do LocalTube.exe.
+FROZEN = bool(getattr(sys, "frozen", False))
+APP_DIR = Path(sys.executable).parent
+YTDLP_HELPER = "localtube-ytdlp.exe"
 
 
 @dataclass
@@ -22,15 +29,47 @@ class ToolInfo:
         return self.path is not None
 
 
-def ytdlp_version() -> str | None:
+def bundled_ytdlp_version() -> str | None:
+    # Pelos metadados, sem importar o yt_dlp: o localtube-ytdlp.exe ainda vai escolher
+    # entre o embutido e o wheel atualizado.
     try:
-        from yt_dlp.version import __version__
-    except ImportError:
+        return metadata.version("yt-dlp")
+    except metadata.PackageNotFoundError:
         return None
-    return __version__
+
+
+def ytdlp_updates_dir() -> Path:
+    """Onde a versão empacotada guarda o wheel do yt-dlp baixado por "Atualizar"."""
+    base = os.environ.get("LOCALAPPDATA") or str(Path.home())
+    return Path(base) / "LocalTube" / "yt-dlp"
+
+
+def _wheel_version(path: Path) -> str:
+    # yt_dlp-2026.10.26-py3-none-any.whl -> 2026.10.26
+    return path.name.split("-")[1]
+
+
+def updated_ytdlp_wheel(bundled: str | None = None) -> Path | None:
+    """O wheel baixado mais novo, se for mais novo que o yt-dlp embutido."""
+    bundled = bundled or bundled_ytdlp_version() or "0"
+    folder = ytdlp_updates_dir()
+    wheels = sorted(folder.glob("yt_dlp-*.whl"), key=lambda p: _version_key(_wheel_version(p)))
+    if wheels and is_newer(_wheel_version(wheels[-1]), bundled):
+        return wheels[-1]
+    return None
+
+
+def ytdlp_version() -> str | None:
+    if FROZEN:
+        wheel = updated_ytdlp_wheel()
+        if wheel:
+            return _wheel_version(wheel)
+    return bundled_ytdlp_version()
 
 
 def ytdlp_command() -> list[str]:
+    if FROZEN:
+        return [str(APP_DIR / YTDLP_HELPER)]
     return [sys.executable, "-m", "yt_dlp"]
 
 
@@ -51,7 +90,7 @@ def _winget_candidates(name: str) -> list[Path]:
 
 
 def find_tool(name: str, configured: str = "") -> str | None:
-    """Caminho configurado (arquivo ou pasta) → PATH → instalação do winget."""
+    """Caminho configurado (arquivo ou pasta) → ffmpeg embutido → PATH → instalação do winget."""
     if configured:
         path = Path(configured)
         if path.is_dir():
@@ -60,6 +99,8 @@ def find_tool(name: str, configured: str = "") -> str | None:
             path = path.with_name(_exe(name))
         if path.is_file():
             return str(path)
+    if FROZEN and (APP_DIR / "ffmpeg" / _exe(name)).is_file():
+        return str(APP_DIR / "ffmpeg" / _exe(name))
     on_path = shutil.which(name)
     if on_path:
         return on_path
@@ -96,8 +137,9 @@ def ffprobe_path(ffmpeg: str | None) -> str | None:
     return find_tool("ffprobe")
 
 
-def is_newer(latest: str, current: str) -> bool:
-    def key(v: str) -> tuple[int, ...]:
-        return tuple(int(p) for p in re.findall(r"\d+", v))
+def _version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(p) for p in re.findall(r"\d+", version))
 
-    return key(latest) > key(current)
+
+def is_newer(latest: str, current: str) -> bool:
+    return _version_key(latest) > _version_key(current)

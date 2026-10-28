@@ -1,5 +1,6 @@
 """Tela Configurações: tudo é salvo assim que muda."""
 
+import hashlib
 import json
 import sys
 
@@ -62,6 +63,7 @@ class SettingsPage(QWidget):
         self.host = host
         self._net = QNetworkAccessManager(self)
         self._latest: str | None = None
+        self._wheel: dict | None = None
         self._pip: QProcess | None = None
 
         header, _, _ = page_header("Configurações", "As alterações são salvas automaticamente.")
@@ -216,10 +218,12 @@ class SettingsPage(QWidget):
             self.host.toast("Não foi possível consultar o PyPI", error=True)
             return
         try:
-            self._latest = json.loads(bytes(reply.readAll()).decode())["info"]["version"]
+            data = json.loads(bytes(reply.readAll()).decode())
+            self._latest = data["info"]["version"]
         except (ValueError, KeyError):
             self.host.toast("Resposta inesperada do PyPI", error=True)
             return
+        self._wheel = next((f for f in data.get("urls", []) if f.get("packagetype") == "bdist_wheel"), None)
         current = self.services.ytdlp_version or "0"
         self.ytdlp_status_dot.show()
         if tools.is_newer(self._latest, current):
@@ -238,9 +242,41 @@ class SettingsPage(QWidget):
     def _run_upgrade(self) -> None:
         self.update_btn.setEnabled(False)
         self.update_btn.setText("Atualizando…")
+        if tools.FROZEN:
+            # A versão empacotada não tem pip: o wheel (um zip importável) fica na pasta do
+            # usuário e o localtube-ytdlp.exe o usa no lugar do yt-dlp embutido.
+            if not self._wheel:
+                self._on_upgrade_done(1, None)
+                return
+            reply = self._net.get(QNetworkRequest(QUrl(self._wheel["url"])))
+            reply.finished.connect(lambda: self._on_wheel(reply))
+            return
         self._pip = QProcess(self)
         self._pip.finished.connect(self._on_upgrade_done)
         self._pip.start(sys.executable, ["-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "yt-dlp"])
+
+    def _on_wheel(self, reply: QNetworkReply) -> None:
+        reply.deleteLater()
+        data = bytes(reply.readAll())
+        ok = (reply.error() == QNetworkReply.NetworkError.NoError
+              and hashlib.sha256(data).hexdigest() == self._wheel["digests"]["sha256"])
+        if ok:
+            folder = tools.ytdlp_updates_dir()
+            target = folder / self._wheel["filename"]
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+                partial = target.with_suffix(".part")
+                partial.write_bytes(data)
+                partial.replace(target)
+            except OSError:
+                ok = False
+            for old in folder.glob("yt_dlp-*.whl") if ok else ():
+                try:
+                    if old != target:
+                        old.unlink()
+                except OSError:
+                    pass  # em uso por um download; o mais novo já tem prioridade
+        self._on_upgrade_done(0 if ok else 1, None)
 
     def _on_upgrade_done(self, code: int, _status) -> None:
         self.update_btn.setEnabled(True)

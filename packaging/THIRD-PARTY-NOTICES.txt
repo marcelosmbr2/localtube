@@ -1,0 +1,28 @@
+LocalTube inclui os seguintes componentes de terceiros:
+
+Python
+  Licença: Python Software Foundation License
+  https://www.python.org/
+
+Qt e PySide6 (Qt for Python)
+  Licença: GNU LGPL v3. As bibliotecas do Qt estão em _internal\PySide6 e podem ser
+  substituídas por outra versão compatível.
+  Código-fonte: https://code.qt.io/  e  https://pypi.org/project/PySide6/#files
+
+yt-dlp
+  Licença: The Unlicense (domínio público)
+  https://github.com/yt-dlp/yt-dlp
+
+FFmpeg (pasta ffmpeg\)
+  Licença: GNU GPL v3 (texto completo em ffmpeg\LICENSE.txt). O ffmpeg é um programa à
+  parte, executado pelo LocalTube como um processo separado.
+  Código-fonte da versão incluída: https://www.gyan.dev/ffmpeg/builds/  e
+  https://ffmpeg.org/download.html#get-sources
+
+Inter e JetBrains Mono
+  Licença: SIL Open Font License 1.1 (textos em _internal\localtube\resources\fonts)
+  https://rsms.me/inter/  e  https://www.jetbrains.com/lp/mono/
+
+PyInstaller (carregador do executável)
+  Licença: GNU GPL v2 com exceção para o bootloader, que permite distribuir o executável
+  sob qualquer licença. https://pyinstaller.org/

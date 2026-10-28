@@ -3,7 +3,6 @@
 Pausar encerra o processo; retomar relança com --continue, que reaproveita o .part.
 """
 
-import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -11,7 +10,7 @@ from itertools import count
 
 from PySide6.QtCore import QObject, Signal
 
-from localtube.core import ytdlp
+from localtube.core import tools, ytdlp
 from localtube.core.process import ProcessRunner
 from localtube.core.ytdlp import DownloadRequest
 from localtube.settings import AppSettings
@@ -169,7 +168,8 @@ class DownloadQueue(QObject):
         runner.finished.connect(lambda code, j=job, r=runner: self._on_finished(j, r, code))
         self._runners[job.id] = runner
         self.job_changed.emit(job)
-        runner.start(sys.executable, ["-m", "yt_dlp", *args])
+        program, *base = tools.ytdlp_command()
+        runner.start(program, [*base, *args])
 
     def _kill(self, job: DownloadJob) -> None:
         runner = self._runners.pop(job.id, None)
