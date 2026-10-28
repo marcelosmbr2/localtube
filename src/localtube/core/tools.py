@@ -1,5 +1,6 @@
 """Localização e versões das ferramentas externas (yt-dlp, ffmpeg, ffprobe)."""
 
+import hashlib
 import os
 import re
 import shutil
@@ -59,12 +60,37 @@ def updated_ytdlp_wheel(bundled: str | None = None) -> Path | None:
     return None
 
 
+def install_ytdlp_wheel(data: bytes, filename: str, sha256: str) -> bool:
+    """Guarda o wheel baixado do PyPI se o hash conferir e apaga os anteriores."""
+    if Path(filename).name != filename or not filename.startswith("yt_dlp-") or not filename.endswith(".whl"):
+        return False
+    if hashlib.sha256(data).hexdigest() != sha256.lower():
+        return False
+    folder = ytdlp_updates_dir()
+    target = folder / filename
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        partial = target.with_suffix(".part")
+        partial.write_bytes(data)
+        partial.replace(target)
+    except OSError:
+        return False
+    for old in folder.glob("yt_dlp-*.whl"):
+        if old != target:
+            try:
+                old.unlink()
+            except OSError:
+                pass  # em uso por um download; o mais novo já tem prioridade
+    return True
+
+
 def ytdlp_version() -> str | None:
+    bundled = bundled_ytdlp_version()
     if FROZEN:
-        wheel = updated_ytdlp_wheel()
+        wheel = updated_ytdlp_wheel(bundled)
         if wheel:
             return _wheel_version(wheel)
-    return bundled_ytdlp_version()
+    return bundled
 
 
 def ytdlp_command() -> list[str]:

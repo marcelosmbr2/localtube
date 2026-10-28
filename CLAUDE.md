@@ -18,7 +18,7 @@ python -m venv .venv
 .venv\Scripts\python.exe -m pytest tests/test_downloads.py::test_pause_kills_without_failing_and_resume_restarts
 ```
 
-ffmpeg/ffprobe are external (`winget install --id Gyan.FFmpeg -e`). `core/tools.find_tool` looks at the configured path, then PATH, then the winget `Links`/`Packages` folders, so a fresh winget install is found without restarting the shell. yt-dlp is a pip dependency and runs as `sys.executable -m yt_dlp`.
+ffmpeg/ffprobe are external (`winget install --id Gyan.FFmpeg -e`). `core/tools.find_tool` looks at the configured path, then PATH, then the winget `Links`/`Packages` folders, so a fresh winget install is found without restarting the shell. yt-dlp is a pip dependency; launch it with `tools.ytdlp_command()` (`sys.executable -m yt_dlp` from source, the bundled helper once frozen).
 
 To check the UI without showing a window, use `QT_QPA_PLATFORM=offscreen`, create the `QApplication` first, then the window, then a `QTimer.singleShot(…, app.quit)` — a timer created before the app exists never fires and the process hangs. `window.grab().save("x.png")` gives a screenshot to compare against the mockup. Pass `AppSettings(QSettings(path, IniFormat))` to avoid touching the real settings in `%APPDATA%\LocalTube`.
 

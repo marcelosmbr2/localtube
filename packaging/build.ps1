@@ -25,7 +25,8 @@ function Invoke-Checked {
 Push-Location $Root
 try {
     Invoke-Checked $Python @("-m", "pip", "install", "--disable-pip-version-check", "-q", "-e", ".[build]")
-    $Version = & $Python -c "import localtube; print(localtube.__version__)"
+    $Version = "$(& $Python -c "import localtube; print(localtube.__version__)")".Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $Version) { throw "Não foi possível ler a versão de localtube.__version__" }
 
     if (-not $FFmpegDir) {
         $found = & $Python -c "from localtube.core.tools import find_tool; print(find_tool('ffmpeg') or '')"
@@ -49,9 +50,11 @@ try {
     New-Item -ItemType Directory -Force $FFmpegOut | Out-Null
     Copy-Item (Join-Path $FFmpegDir "ffmpeg.exe"), (Join-Path $FFmpegDir "ffprobe.exe") $FFmpegOut
     Get-ChildItem $FFmpegDir -Filter *.dll | Copy-Item -Destination $FFmpegOut  # builds "shared"
+    # O ffmpeg é GPL: o texto da licença tem que ir junto.
     $License = @(Join-Path $FFmpegDir "LICENSE*") + @(Join-Path (Split-Path $FFmpegDir -Parent) "LICENSE*")
-    Get-ChildItem $License -ErrorAction SilentlyContinue | Select-Object -First 1 |
-        Copy-Item -Destination (Join-Path $FFmpegOut "LICENSE.txt")
+    $License = Get-ChildItem $License -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $License) { throw "Licença do ffmpeg (LICENSE*) não encontrada em $FFmpegDir nem na pasta acima" }
+    Copy-Item $License.FullName (Join-Path $FFmpegOut "LICENSE.txt")
     Copy-Item "packaging\THIRD-PARTY-NOTICES.txt" $AppDir
 
     if ($SkipInstaller) { return }

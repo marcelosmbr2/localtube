@@ -1,5 +1,7 @@
 """Comportamento da versão empacotada (tools.FROZEN): ffmpeg embutido e yt-dlp atualizado."""
 
+import hashlib
+
 import pytest
 
 from localtube.core import tools
@@ -47,3 +49,18 @@ def test_newest_downloaded_wheel_overrides_bundled(frozen, monkeypatch):
     (folder / "yt_dlp-2026.11.10-py3-none-any.whl").write_bytes(b"")
     assert tools.updated_ytdlp_wheel().name == "yt_dlp-2026.11.10-py3-none-any.whl"
     assert tools.ytdlp_version() == "2026.11.10"
+
+
+def test_install_wheel_checks_hash_and_replaces_older(frozen):
+    data = b"wheel"
+    digest = hashlib.sha256(data).hexdigest()
+    folder = tools.ytdlp_updates_dir()
+
+    assert not tools.install_ytdlp_wheel(data, "yt_dlp-2026.11.2-py3-none-any.whl", "0" * 64)
+    assert not folder.exists()
+    assert not tools.install_ytdlp_wheel(data, "../yt_dlp-2026.11.2-py3-none-any.whl", digest)
+
+    assert tools.install_ytdlp_wheel(data, "yt_dlp-2026.11.2-py3-none-any.whl", digest)
+    assert tools.install_ytdlp_wheel(data, "yt_dlp-2026.11.10-py3-none-any.whl", digest.upper())
+    assert [p.name for p in folder.iterdir()] == ["yt_dlp-2026.11.10-py3-none-any.whl"]
+    assert (folder / "yt_dlp-2026.11.10-py3-none-any.whl").read_bytes() == data

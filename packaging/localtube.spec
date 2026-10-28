@@ -19,6 +19,7 @@ app = Analysis(
 helper = Analysis(
     [str(Path(SPECPATH) / "ytdlp_entry.py")],
     pathex=[str(SRC)],
+    datas=copy_metadata("yt-dlp"),  # tools.bundled_ytdlp_version(), para comparar com o wheel
     hiddenimports=collect_submodules("yt_dlp"),
     excludes=EXCLUDES + ["PySide6", "shiboken6"],
 )

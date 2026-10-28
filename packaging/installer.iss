@@ -35,6 +35,12 @@ Name: "ptbr"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+[InstallDelete]
+; Ao instalar por cima de outra versão, arquivos que a nova não tem mais (outra versão do
+; Python ou do Qt) ficariam em _internal e poderiam ser carregados no lugar dos novos.
+Type: filesandordirs; Name: "{app}\_internal"
+Type: filesandordirs; Name: "{app}\ffmpeg"
+
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 

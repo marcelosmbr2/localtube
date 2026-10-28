@@ -1,6 +1,5 @@
 """Tela Configurações: tudo é salvo assim que muda."""
 
-import hashlib
 import json
 import sys
 
@@ -257,25 +256,9 @@ class SettingsPage(QWidget):
 
     def _on_wheel(self, reply: QNetworkReply) -> None:
         reply.deleteLater()
-        data = bytes(reply.readAll())
         ok = (reply.error() == QNetworkReply.NetworkError.NoError
-              and hashlib.sha256(data).hexdigest() == self._wheel["digests"]["sha256"])
-        if ok:
-            folder = tools.ytdlp_updates_dir()
-            target = folder / self._wheel["filename"]
-            try:
-                folder.mkdir(parents=True, exist_ok=True)
-                partial = target.with_suffix(".part")
-                partial.write_bytes(data)
-                partial.replace(target)
-            except OSError:
-                ok = False
-            for old in folder.glob("yt_dlp-*.whl") if ok else ():
-                try:
-                    if old != target:
-                        old.unlink()
-                except OSError:
-                    pass  # em uso por um download; o mais novo já tem prioridade
+              and tools.install_ytdlp_wheel(bytes(reply.readAll()), self._wheel["filename"],
+                                            self._wheel["digests"]["sha256"]))
         self._on_upgrade_done(0 if ok else 1, None)
 
     def _on_upgrade_done(self, code: int, _status) -> None:
